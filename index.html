@@ -420,54 +420,54 @@ class Component extends DCLogic {
       erro: this.state.erro,
       textoBotao: this.state.enviando ? 'Enviando…' : 'Enviar mensagem',
       enviar: async (e) => {
-        e.preventDefault();
-        const form = e.currentTarget || e.target;
-        if (!form || !form.checkValidity()) {
-          if (form) {
-            const faltando = form.querySelector(':invalid');
-            if (faltando) faltando.focus();
-          }
-          this.setState({ erro: 'Confira os campos obrigatórios e o endereço de e-mail.' });
-          return;
-        }
+  e.preventDefault();
 
-        this.setState({ enviando: true, erro: '' });
-        const dados = new FormData(form);
-        dados.set('_subject', 'Da Alavanca ao Código, contato de escola — ' + dados.get('nome'));
-        dados.set('_replyto', dados.get('email'));
-        dados.set('_template', 'table');
-        dados.set('_captcha', 'false');
+  const form = e.target;
 
-        try {
-          const resposta = await fetch(ENDPOINT, {
-            method: 'POST',
-            body: dados,
-            headers: { Accept: 'application/json' }
-          });
+  if (!form.checkValidity()) {
+    const faltando = form.querySelector(':invalid');
+    if (faltando) faltando.focus();
 
-          let resultado;
-          try {
-            resultado = await resposta.json();
-          } catch (_) {
-            throw new Error('Resposta inválida do serviço de envio.');
-          }
+    this.setState({
+      erro: 'Preencha nome, e-mail e a mensagem.'
+    });
+    return;
+  }
 
-          const confirmado = resultado && (
-            resultado.success === true || resultado.success === 'true'
-          );
-          if (!resposta.ok || !confirmado) {
-            throw new Error((resultado && resultado.message) || ('HTTP ' + resposta.status));
-          }
+  this.setState({ enviando: true, erro: '' });
 
-          this.setState({ enviando: false, enviado: true, erro: '' });
-        } catch (err) {
-          this.setState({
-            enviando: false,
-            erro: 'Não foi possível confirmar o envio. Tente novamente ou escreva diretamente para ' + email + '.'
-          });
-        }
-      }
-    };
+  const dados = new FormData(form);
+
+  dados.append(
+    '_subject',
+    'Da Alavanca ao Código, contato de escola — ' + dados.get('nome')
+  );
+  dados.append('_template', 'table');
+  dados.append('_captcha', 'false');
+
+  try {
+    const resposta = await fetch(ENDPOINT, {
+      method: 'POST',
+      body: dados,
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!resposta.ok) {
+      throw new Error('HTTP ' + resposta.status);
+    }
+
+    this.setState({
+      enviando: false,
+      enviado: true
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    this.setState({
+      enviando: false,
+      erro: 'Não deu para enviar agora. Escreva direto para ' + email + '.'
+    });
   }
 }
 </script>

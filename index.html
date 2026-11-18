@@ -415,18 +415,27 @@
 </div>
 </x-dc>
 <script data-dc-script="" data-props='{"emailContato":{"editor":"text","default":"maquinatudo@gmail.com","tsType":"string","section":"Contato"},"mostrarCodigosBncc":{"editor":"boolean","default":true,"tsType":"boolean","section":"Seção BNCC"},"mostrarRessalvaCalendario":{"editor":"boolean","default":true,"tsType":"boolean","section":"Cronograma"}}' type="text/x-dc">
+
 class Component extends DCLogic {
-  state = { enviando: false, enviado: false, erro: '' };
+
+  constructor(...args) {
+    super(...args);
+    this.state = {
+      enviando: false,
+      enviado: false,
+      erro: ''
+    };
+  }
 
   renderVals() {
-    const email = this.props.emailContato ?? 'maquinatudo@gmail.com';
+    const email = this.props.emailContato || 'maquinatudo@gmail.com';
     const ENDPOINT = 'https://formsubmit.co/ajax/57ffae6a3e4ac81dbd0500fb9950b3fc';
 
     return {
       emailContato: email,
       mailtoHref: 'mailto:' + email,
-      mostrarCodigos: this.props.mostrarCodigosBncc ?? true,
-      mostrarRessalva: this.props.mostrarRessalvaCalendario ?? true,
+      mostrarCodigos: this.props.mostrarCodigosBncc !== false,
+      mostrarRessalva: this.props.mostrarRessalvaCalendario !== false,
       naoEnviado: !this.state.enviado,
       enviado: this.state.enviado,
       enviando: this.state.enviando,
@@ -435,18 +444,22 @@ class Component extends DCLogic {
 
       enviar: async (e) => {
         e.preventDefault();
-        // No submit, e.target é o próprio formulário.
+
         const formulario = e.target;
         this.setState({ erro: '' });
 
         if (!formulario || !formulario.checkValidity()) {
           const faltando = formulario && formulario.querySelector(':invalid');
           if (faltando) faltando.focus();
-          this.setState({ erro: 'Preencha nome, e-mail e a descrição da proposta.' });
+
+          this.setState({
+            erro: 'Preencha nome, e-mail e a descrição da proposta.'
+          });
           return;
         }
 
         this.setState({ enviando: true, erro: '' });
+
         const dados = new FormData(formulario);
         dados.append('_subject', 'Proposta de parceria — ' + dados.get('nome'));
         dados.append('_template', 'table');
@@ -456,25 +469,34 @@ class Component extends DCLogic {
           const resposta = await fetch(ENDPOINT, {
             method: 'POST',
             body: dados,
-            headers: { 'Accept': 'application/json' }
+            headers: {
+              'Accept': 'application/json'
+            }
           });
 
-          // Segue o comportamento da versão comprovadamente funcional:
-          // considera o envio aceito quando o HTTP retorna status OK.
-          if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
+          if (!resposta.ok) {
+            throw new Error('HTTP ' + resposta.status);
+          }
 
-          this.setState({ enviando: false, enviado: true, erro: '' });
+          this.setState({
+            enviando: false,
+            enviado: true,
+            erro: ''
+          });
+
         } catch (err) {
           console.error(err);
+
           this.setState({
             enviando: false,
             erro: 'Não deu para enviar agora. Escreva direto para ' + email + '.'
           });
         }
       }
-    }
+    };
   }
 }
+
 </script>
 </body>
 </html>
